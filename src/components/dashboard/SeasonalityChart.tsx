@@ -1,34 +1,36 @@
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const seasonalData = [
-  { month: 'Jan', price: 850, occupancy: 65 },
-  { month: 'Fév', price: 780, occupancy: 58 },
-  { month: 'Mar', price: 920, occupancy: 72 },
-  { month: 'Avr', price: 1100, occupancy: 85 },
-  { month: 'Mai', price: 1050, occupancy: 78 },
-  { month: 'Juin', price: 950, occupancy: 70 },
-  { month: 'Juil', price: 880, occupancy: 62 },
-  { month: 'Août', price: 920, occupancy: 68 },
-  { month: 'Sep', price: 980, occupancy: 75 },
-  { month: 'Oct', price: 1150, occupancy: 88 },
-  { month: 'Nov', price: 1080, occupancy: 82 },
-  { month: 'Déc', price: 1250, occupancy: 92 },
+  { month: 'Jan', prix: 850, occupation: 65 },
+  { month: 'Fév', prix: 780, occupation: 58 },
+  { month: 'Mar', prix: 920, occupation: 72 },
+  { month: 'Avr', prix: 1100, occupation: 85 },
+  { month: 'Mai', prix: 1050, occupation: 78 },
+  { month: 'Juin', prix: 950, occupation: 70 },
+  { month: 'Juil', prix: 880, occupation: 62 },
+  { month: 'Août', prix: 920, occupation: 68 },
+  { month: 'Sep', prix: 980, occupation: 75 },
+  { month: 'Oct', prix: 1150, occupation: 88 },
+  { month: 'Nov', prix: 1080, occupation: 82 },
+  { month: 'Déc', prix: 1250, occupation: 92 },
 ];
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-card border border-border rounded-lg p-3 shadow-xl">
-        <p className="font-semibold text-foreground mb-2">{label}</p>
-        <div className="space-y-1">
-          <p className="text-sm">
-            <span className="text-primary">Prix moyen:</span>{' '}
-            <span className="font-medium">{payload[0]?.value} MAD</span>
-          </p>
-          <p className="text-sm">
-            <span className="text-emerald">Occupation:</span>{' '}
-            <span className="font-medium">{payload[1]?.value}%</span>
-          </p>
+      <div className="bg-card border-2 border-border rounded-xl p-4 shadow-xl">
+        <p className="font-display font-semibold text-foreground mb-3">{label}</p>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-primary" />
+            <span className="text-sm text-muted-foreground">Prix moyen:</span>
+            <span className="font-semibold text-foreground">{payload[0]?.value} MAD</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-teal" />
+            <span className="text-sm text-muted-foreground">Occupation:</span>
+            <span className="font-semibold text-foreground">{payload[1]?.value}%</span>
+          </div>
         </div>
       </div>
     );
@@ -38,20 +40,20 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export function SeasonalityChart() {
   return (
-    <div className="stat-card h-[400px] animate-slide-up" style={{ animationDelay: '400ms' }}>
-      <div className="flex items-center justify-between mb-6">
+    <div className="stat-card h-[420px] animate-slide-up" style={{ animationDelay: '400ms' }}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h3 className="font-display text-lg font-semibold text-foreground">Tendances Saisonnières</h3>
-          <p className="text-sm text-muted-foreground">Prix moyens et occupation par mois</p>
+          <h3 className="font-display text-xl font-bold text-foreground">Tendances Saisonnières</h3>
+          <p className="text-sm text-muted-foreground mt-1">Prix moyens et taux d'occupation par mois</p>
         </div>
-        <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center gap-5 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-primary" />
-            <span className="text-muted-foreground">Prix (MAD)</span>
+            <span className="font-medium text-muted-foreground">Prix (MAD)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-emerald" />
-            <span className="text-muted-foreground">Occupation (%)</span>
+            <div className="w-3 h-3 rounded-full bg-teal" />
+            <span className="font-medium text-muted-foreground">Occupation (%)</span>
           </div>
         </div>
       </div>
@@ -60,55 +62,58 @@ export function SeasonalityChart() {
         <AreaChart data={seasonalData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
           <defs>
             <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(38 85% 55%)" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="hsl(38 85% 55%)" stopOpacity={0}/>
+              <stop offset="5%" stopColor="hsl(24 95% 53%)" stopOpacity={0.25}/>
+              <stop offset="95%" stopColor="hsl(24 95% 53%)" stopOpacity={0}/>
             </linearGradient>
             <linearGradient id="occupancyGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(160 70% 45%)" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="hsl(160 70% 45%)" stopOpacity={0}/>
+              <stop offset="5%" stopColor="hsl(173 80% 40%)" stopOpacity={0.25}/>
+              <stop offset="95%" stopColor="hsl(173 80% 40%)" stopOpacity={0}/>
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 15% 20%)" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" vertical={false} />
           <XAxis 
             dataKey="month" 
-            stroke="hsl(220 10% 55%)" 
+            stroke="hsl(220 10% 46%)" 
             fontSize={12}
+            fontWeight={500}
             tickLine={false}
             axisLine={false}
           />
           <YAxis 
-            yAxisId="price"
-            stroke="hsl(220 10% 55%)" 
+            yAxisId="prix"
+            stroke="hsl(220 10% 46%)" 
             fontSize={12}
+            fontWeight={500}
             tickLine={false}
             axisLine={false}
             tickFormatter={(value) => `${value}`}
           />
           <YAxis 
-            yAxisId="occupancy"
+            yAxisId="occupation"
             orientation="right"
-            stroke="hsl(220 10% 55%)" 
+            stroke="hsl(220 10% 46%)" 
             fontSize={12}
+            fontWeight={500}
             tickLine={false}
             axisLine={false}
             tickFormatter={(value) => `${value}%`}
           />
           <Tooltip content={<CustomTooltip />} />
           <Area
-            yAxisId="price"
+            yAxisId="prix"
             type="monotone"
-            dataKey="price"
-            stroke="hsl(38 85% 55%)"
-            strokeWidth={2}
+            dataKey="prix"
+            stroke="hsl(24 95% 53%)"
+            strokeWidth={3}
             fillOpacity={1}
             fill="url(#priceGradient)"
           />
           <Area
-            yAxisId="occupancy"
+            yAxisId="occupation"
             type="monotone"
-            dataKey="occupancy"
-            stroke="hsl(160 70% 45%)"
-            strokeWidth={2}
+            dataKey="occupation"
+            stroke="hsl(173 80% 40%)"
+            strokeWidth={3}
             fillOpacity={1}
             fill="url(#occupancyGradient)"
           />
