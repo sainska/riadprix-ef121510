@@ -14,16 +14,452 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      api_ingestion_logs: {
+        Row: {
+          completed_at: string | null
+          error_message: string | null
+          id: string
+          market_id: string | null
+          records_processed: number | null
+          source: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          market_id?: string | null
+          records_processed?: number | null
+          source: string
+          started_at?: string
+          status: string
+        }
+        Update: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          market_id?: string | null
+          records_processed?: number | null
+          source?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_ingestion_logs_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      benchmarks: {
+        Row: {
+          avg_occupancy: number | null
+          created_at: string
+          id: string
+          market_id: string
+          max_price: number | null
+          median_price: number | null
+          min_price: number | null
+          period_end: string
+          period_start: string
+          property_type: Database["public"]["Enums"]["property_type"]
+          total_listings: number | null
+        }
+        Insert: {
+          avg_occupancy?: number | null
+          created_at?: string
+          id?: string
+          market_id: string
+          max_price?: number | null
+          median_price?: number | null
+          min_price?: number | null
+          period_end: string
+          period_start: string
+          property_type: Database["public"]["Enums"]["property_type"]
+          total_listings?: number | null
+        }
+        Update: {
+          avg_occupancy?: number | null
+          created_at?: string
+          id?: string
+          market_id?: string
+          max_price?: number | null
+          median_price?: number | null
+          min_price?: number | null
+          period_end?: string
+          period_start?: string
+          property_type?: Database["public"]["Enums"]["property_type"]
+          total_listings?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "benchmarks_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      markets: {
+        Row: {
+          country: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          latitude: number | null
+          longitude: number | null
+          name: string
+          name_fr: string | null
+        }
+        Insert: {
+          country?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          name_fr?: string | null
+        }
+        Update: {
+          country?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          name_fr?: string | null
+        }
+        Relationships: []
+      }
+      neighborhoods: {
+        Row: {
+          created_at: string
+          id: string
+          market_id: string
+          name: string
+          name_fr: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          market_id: string
+          name: string
+          name_fr?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          market_id?: string
+          name?: string
+          name_fr?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "neighborhoods_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pricing_data: {
+        Row: {
+          avg_price: number | null
+          created_at: string
+          date: string
+          id: string
+          market_id: string
+          max_price: number | null
+          median_price: number | null
+          min_price: number | null
+          neighborhood_id: string | null
+          occupancy_rate: number | null
+          property_type: Database["public"]["Enums"]["property_type"]
+          sample_size: number | null
+        }
+        Insert: {
+          avg_price?: number | null
+          created_at?: string
+          date: string
+          id?: string
+          market_id: string
+          max_price?: number | null
+          median_price?: number | null
+          min_price?: number | null
+          neighborhood_id?: string | null
+          occupancy_rate?: number | null
+          property_type: Database["public"]["Enums"]["property_type"]
+          sample_size?: number | null
+        }
+        Update: {
+          avg_price?: number | null
+          created_at?: string
+          date?: string
+          id?: string
+          market_id?: string
+          max_price?: number | null
+          median_price?: number | null
+          min_price?: number | null
+          neighborhood_id?: string | null
+          occupancy_rate?: number | null
+          property_type?: Database["public"]["Enums"]["property_type"]
+          sample_size?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_data_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_data_neighborhood_id_fkey"
+            columns: ["neighborhood_id"]
+            isOneToOne: false
+            referencedRelation: "neighborhoods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          language: string | null
+          phone: string | null
+          theme: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          language?: string | null
+          phone?: string | null
+          theme?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          language?: string | null
+          phone?: string | null
+          theme?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      properties: {
+        Row: {
+          airbnb_url: string | null
+          bathrooms: number | null
+          bedrooms: number | null
+          booking_url: string | null
+          created_at: string
+          currency: string | null
+          current_price: number | null
+          id: string
+          is_active: boolean | null
+          market_id: string | null
+          max_guests: number | null
+          name: string
+          neighborhood_id: string | null
+          property_type: Database["public"]["Enums"]["property_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          airbnb_url?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          booking_url?: string | null
+          created_at?: string
+          currency?: string | null
+          current_price?: number | null
+          id?: string
+          is_active?: boolean | null
+          market_id?: string | null
+          max_guests?: number | null
+          name: string
+          neighborhood_id?: string | null
+          property_type?: Database["public"]["Enums"]["property_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          airbnb_url?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          booking_url?: string | null
+          created_at?: string
+          currency?: string | null
+          current_price?: number | null
+          id?: string
+          is_active?: boolean | null
+          market_id?: string | null
+          max_guests?: number | null
+          name?: string
+          neighborhood_id?: string | null
+          property_type?: Database["public"]["Enums"]["property_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "properties_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_neighborhood_id_fkey"
+            columns: ["neighborhood_id"]
+            isOneToOne: false
+            referencedRelation: "neighborhoods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recommendations: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          id: string
+          is_applied: boolean | null
+          property_id: string
+          reasoning: string | null
+          recommended_price: number
+          valid_from: string
+          valid_to: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          is_applied?: boolean | null
+          property_id: string
+          reasoning?: string | null
+          recommended_price: number
+          valid_from: string
+          valid_to: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          is_applied?: boolean | null
+          property_id?: string
+          reasoning?: string | null
+          recommended_price?: number
+          valid_from?: string
+          valid_to?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendations_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          ends_at: string | null
+          id: string
+          is_active: boolean | null
+          starts_at: string
+          tier: Database["public"]["Enums"]["subscription_tier"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          starts_at?: string
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          starts_at?: string
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "owner" | "manager" | "admin"
+      property_type:
+        | "riad"
+        | "apartment"
+        | "villa"
+        | "hotel"
+        | "guesthouse"
+        | "other"
+      subscription_tier: "starter" | "pro" | "enterprise"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +586,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["owner", "manager", "admin"],
+      property_type: [
+        "riad",
+        "apartment",
+        "villa",
+        "hotel",
+        "guesthouse",
+        "other",
+      ],
+      subscription_tier: ["starter", "pro", "enterprise"],
+    },
   },
 } as const
