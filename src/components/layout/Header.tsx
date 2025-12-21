@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,13 +28,15 @@ import {
   LogOut,
   Building2,
   ChevronDown,
+  Settings,
+  Shield,
 } from "lucide-react";
 
 const navItems = [
-  { icon: LayoutDashboard, label: "Tableau de Bord", labelEn: "Dashboard", active: true },
-  { icon: TrendingUp, label: "Analytiques", labelEn: "Analytics", active: false },
-  { icon: MapPin, label: "Marchés", labelEn: "Markets", active: false },
-  { icon: FileText, label: "Rapports", labelEn: "Reports", active: false },
+  { icon: LayoutDashboard, label: "Tableau de Bord", labelEn: "Dashboard", href: "/dashboard" },
+  { icon: TrendingUp, label: "Analytiques", labelEn: "Analytics", href: "/analytics" },
+  { icon: MapPin, label: "Marchés", labelEn: "Markets", href: "/markets" },
+  { icon: FileText, label: "Rapports", labelEn: "Reports", href: "/reports" },
 ];
 
 export function Header() {
@@ -43,6 +45,7 @@ export function Header() {
   const { language, setLanguage, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSignOut = async () => {
     await signOut();
@@ -67,17 +70,18 @@ export function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-1">
             {navItems.map((item) => (
-              <button
+              <Link
                 key={item.label}
+                to={item.href}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  item.active 
+                  location.pathname === item.href
                     ? "bg-primary/10 text-primary" 
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                 }`}
               >
                 <item.icon className="h-4 w-4" />
                 {language === 'fr' ? item.label : item.labelEn}
-              </button>
+              </Link>
             ))}
           </nav>
 
@@ -122,7 +126,12 @@ export function Header() {
             </DropdownMenu>
 
             {/* Notifications */}
-            <Button variant="ghost" size="icon" className="relative h-9 w-9 hidden sm:flex">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="relative h-9 w-9 hidden sm:flex"
+              onClick={() => navigate('/notifications')}
+            >
               <Bell className="h-5 w-5" />
               <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary animate-pulse" />
             </Button>
@@ -169,6 +178,23 @@ export function Header() {
                       <User className="mr-2 h-4 w-4" />
                       {t('nav.account')}
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      {t('nav.settings')}
+                    </DropdownMenuItem>
+                    {profile?.role === 'admin' && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer">
+                          <Shield className="mr-2 h-4 w-4" />
+                          {t('admin.dashboard')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate('/role-management')} className="cursor-pointer">
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          {t('admin.roleManagement')}
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />
@@ -202,22 +228,24 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+          {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-border bg-card animate-slide-up">
           <nav className="container mx-auto px-4 py-4 flex flex-col gap-1">
             {navItems.map((item) => (
-              <button
+              <Link
                 key={item.label}
+                to={item.href}
+                onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                  item.active 
+                  location.pathname === item.href
                     ? "bg-primary/10 text-primary" 
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                 }`}
               >
                 <item.icon className="h-5 w-5" />
                 {language === 'fr' ? item.label : item.labelEn}
-              </button>
+              </Link>
             ))}
             
             {/* Mobile auth buttons */}

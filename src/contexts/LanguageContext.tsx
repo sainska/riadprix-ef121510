@@ -87,6 +87,10 @@ export const translations: Translations = {
   'common.export': { en: 'Export', fr: 'Exporter' },
   'common.filter': { en: 'Filter', fr: 'Filtrer' },
   'common.search': { en: 'Search', fr: 'Rechercher' },
+  'common.noData': { en: 'No data available', fr: 'Aucune donnée disponible' },
+  'nav.notifications': { en: 'Notifications', fr: 'Notifications' },
+  'nav.exports': { en: 'Exports', fr: 'Exports' },
+  'nav.settings': { en: 'Settings', fr: 'Paramètres' },
   
   // Pricing page
   'pricing.title': { en: 'Simple, Transparent Pricing', fr: 'Tarification simple et transparente' },
@@ -97,6 +101,104 @@ export const translations: Translations = {
   'pricing.perMonth': { en: '/month', fr: '/mois' },
   'pricing.getStarted': { en: 'Get Started', fr: 'Commencer' },
   'pricing.contactSales': { en: 'Contact Sales', fr: 'Contacter les ventes' },
+  
+  // Footer
+  'footer.terms': { en: 'Terms', fr: 'Conditions' },
+  'footer.privacy': { en: 'Privacy', fr: 'Confidentialité' },
+  'footer.contact': { en: 'Contact', fr: 'Contact' },
+  'footer.rightsReserved': { en: 'All rights reserved.', fr: 'Tous droits réservés.' },
+  
+  // About Page
+  'about.title': { en: 'About RiadPrix', fr: 'À Propos de RiadPrix' },
+  'about.mission': { en: 'Mission', fr: 'Mission' },
+  'about.vision': { en: 'Vision', fr: 'Vision' },
+  'about.values': { en: 'Values', fr: 'Valeurs' },
+  'about.ourTeam': { en: 'Our Team', fr: 'Notre Équipe' },
+  'about.propertiesTracked': { en: 'Properties Tracked', fr: 'Propriétés suivies' },
+  'about.citiesCovered': { en: 'Cities Covered', fr: 'Villes couvertes' },
+  'about.activeUsers': { en: 'Active Users', fr: 'Utilisateurs actifs' },
+  'about.customerSatisfaction': { en: 'Customer Satisfaction', fr: 'Satisfaction client' },
+  
+  // Blog Page
+  'blog.title': { en: 'RiadPrix Blog', fr: 'Blog RiadPrix' },
+  'blog.subtitle': { en: 'Tips, insights, and trends to optimize your rental revenue', fr: 'Conseils, analyses et tendances pour optimiser vos revenus locatifs' },
+  'blog.readMore': { en: 'Read More', fr: 'Lire la suite' },
+  'blog.moreComing': { en: 'More articles coming soon...', fr: 'Plus d\'articles à venir...' },
+  
+  // Careers Page
+  'careers.title': { en: 'Join Our Team', fr: 'Rejoignez Notre Équipe' },
+  'careers.subtitle': { en: "Let's build the future of pricing intelligence for Moroccan hospitality together", fr: 'Construisons ensemble l\'avenir de l\'intelligence tarifaire pour l\'hospitalité marocaine' },
+  'careers.benefits': { en: 'Benefits', fr: 'Avantages' },
+  'careers.openPositions': { en: 'Open Positions', fr: 'Postes Ouverts' },
+  'careers.apply': { en: 'Apply', fr: 'Postuler' },
+  'careers.dontSeeRole': { en: "Don't see the right role?", fr: 'Vous ne trouvez pas le poste idéal ?' },
+  'careers.generalApplication': { en: 'Send us your general application', fr: 'Envoyez-nous votre candidature spontanée' },
+  
+  // Cookies Page
+  'cookies.title': { en: 'Cookie Policy', fr: 'Politique des Cookies' },
+  'cookies.whatIs': { en: 'What is a Cookie?', fr: 'Qu\'est-ce qu\'un cookie ?' },
+  'cookies.managePreferences': { en: 'Manage Your Preferences', fr: 'Gérer Vos Préférences' },
+  'cookies.moreInfo': { en: 'More Information', fr: 'Plus d\'Informations' },
+  'cookies.essential': { en: 'Essential Cookies', fr: 'Cookies Essentiels' },
+  'cookies.analytics': { en: 'Analytics Cookies', fr: 'Cookies d\'Analyse' },
+  'cookies.marketing': { en: 'Marketing Cookies', fr: 'Cookies Marketing' },
+  'cookies.required': { en: 'Required', fr: 'Requis' },
+  'cookies.savePreferences': { en: 'Save Preferences', fr: 'Enregistrer les Préférences' },
+  
+  // Help Center
+  'help.title': { en: 'Help Center', fr: 'Centre d\'Aide' },
+  'help.subtitle': { en: 'Find answers to your questions and learn how to use RiadPrix effectively', fr: 'Trouvez des réponses à vos questions et apprenez à utiliser RiadPrix efficacement' },
+  'help.categories': { en: 'Categories', fr: 'Catégories' },
+  'help.popularArticles': { en: 'Popular Articles', fr: 'Articles Populaires' },
+  'help.needMoreHelp': { en: 'Need More Help?', fr: 'Besoin d\'Aide Supplémentaire ?' },
+  'help.contactSupport': { en: 'Contact Support', fr: 'Contacter le Support' },
+  'help.sendEmail': { en: 'Send Email', fr: 'Envoyer un Email' },
+  
+  // Documentation
+  'docs.title': { en: 'Documentation', fr: 'Documentation' },
+  'docs.subtitle': { en: 'Complete guide to using all RiadPrix features', fr: 'Guide complet pour utiliser toutes les fonctionnalités de RiadPrix' },
+  'docs.apiDoc': { en: 'API Documentation', fr: 'Documentation API' },
+  'docs.needHelp': { en: 'Need Help?', fr: 'Besoin d\'Aide ?' },
+  'docs.viewApiDoc': { en: 'View API Documentation', fr: 'Voir la Documentation API' },
+  
+  // Features & How It Works (Index page)
+  'index.features.title': { en: 'Key Features', fr: 'Fonctionnalités Principales' },
+  'index.features.subtitle': { en: 'Everything you need to optimize your rental revenue', fr: 'Tout ce dont vous avez besoin pour optimiser vos revenus locatifs' },
+  'index.features.benchmarking': { en: 'Price Benchmarking', fr: 'Benchmarking des Prix' },
+  'index.features.benchmarkingDesc': { en: 'Compare your prices with the local market in real time', fr: 'Comparez vos prix avec le marché local en temps réel' },
+  'index.features.trends': { en: 'Trend Analysis', fr: 'Analyse de Tendances' },
+  'index.features.trendsDesc': { en: 'Understand seasonal trends and opportunities', fr: 'Comprenez les tendances saisonnières et les opportunités' },
+  'index.features.recommendations': { en: 'Smart Recommendations', fr: 'Recommandations Intelligentes' },
+  'index.features.recommendationsDesc': { en: 'Receive data-driven pricing suggestions', fr: 'Recevez des suggestions de prix basées sur les données' },
+  'index.howitworks.title': { en: 'How It Works', fr: 'Comment Ça Marche' },
+  'index.howitworks.subtitle': { en: 'In three simple steps, start optimizing your revenue', fr: 'En trois étapes simples, commencez à optimiser vos revenus' },
+  'index.howitworks.step1': { en: 'Create Your Account', fr: 'Créez Votre Compte' },
+  'index.howitworks.step1Desc': { en: 'Sign up for free and add your properties', fr: 'Inscrivez-vous gratuitement et ajoutez vos propriétés' },
+  'index.howitworks.step2': { en: 'Analyze the Market', fr: 'Analysez le Marché' },
+  'index.howitworks.step2Desc': { en: 'View benchmarks and trends for your city', fr: 'Consultez les benchmarks et tendances de votre ville' },
+  'index.howitworks.step3': { en: 'Optimize Your Prices', fr: 'Optimisez Vos Prix' },
+  'index.howitworks.step3Desc': { en: 'Apply our recommendations and maximize your revenue', fr: 'Appliquez nos recommandations et maximisez vos revenus' },
+  'index.dashboard.title': { en: 'Your Market Intelligence Dashboard', fr: 'Votre Tableau de Bord Intelligence Marché' },
+  'index.dashboard.subtitle': { en: 'Analyze market trends, compare your prices and optimize your rental revenue in real time.', fr: 'Analysez les tendances du marché, comparez vos prix et optimisez vos revenus locatifs en temps réel.' },
+  'index.cta.title': { en: 'Ready to optimize your revenue?', fr: 'Prêt à optimiser vos revenus?' },
+  'index.cta.subtitle': { en: 'Join over 70,000 property owners using RiadPrix to maximize their rental revenue.', fr: 'Rejoignez plus de 70,000 propriétaires qui utilisent RiadPrix pour maximiser leurs revenus locatifs.' },
+  'index.cta.startNow': { en: 'Get Started Now', fr: 'Démarrer Maintenant' },
+  'index.cta.requestDemo': { en: 'Request a Demo', fr: 'Demander une Démo' },
+  'index.cta.freeTrial': { en: '14-day free trial', fr: 'Essai gratuit 14 jours' },
+  'index.cta.noCard': { en: 'No credit card required', fr: 'Sans carte bancaire' },
+  
+  // Settings
+  'settings.title': { en: 'Settings', fr: 'Paramètres' },
+  'settings.appearance': { en: 'Appearance', fr: 'Apparence' },
+  'settings.language': { en: 'Language', fr: 'Langue' },
+  'settings.theme': { en: 'Theme', fr: 'Thème' },
+  'settings.light': { en: 'Light', fr: 'Clair' },
+  'settings.dark': { en: 'Dark', fr: 'Sombre' },
+  'settings.notifications': { en: 'Notifications', fr: 'Notifications' },
+  
+  // Admin
+  'admin.dashboard': { en: 'Admin Dashboard', fr: 'Administration' },
+  'admin.roleManagement': { en: 'Role Management', fr: 'Gestion des rôles' },
 };
 
 interface LanguageContextType {
@@ -116,7 +218,18 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem('riadprix-language', lang);
+    // Update HTML lang attribute for accessibility
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('lang', lang);
+    }
   };
+  
+  // Initialize language attribute on mount
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('lang', language);
+    }
+  }, [language]);
 
   const t = (key: string): string => {
     const translation = translations[key];

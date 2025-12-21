@@ -1,5 +1,6 @@
 import { Helmet } from "react-helmet";
 import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -76,7 +77,7 @@ export default function Pricing() {
         <meta name="description" content="Choose the perfect plan for your vacation rental business. Flexible pricing for properties of all sizes." />
       </Helmet>
       
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
         <Header />
         
         <main className="container mx-auto px-4 pt-24 pb-12">
@@ -166,6 +167,7 @@ export default function Pricing() {
             </p>
           </div>
         </main>
+        <Footer />
       </div>
     </>
   );

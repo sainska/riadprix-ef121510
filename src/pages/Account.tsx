@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/hooks/use-toast";
-import { User, Mail, Phone, Shield, Bell, Palette, Globe, Save } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { handleError } from "@/lib/monitoring";
+import { useNavigate } from "react-router-dom";
+import { User, Mail, Phone, Shield, Bell, Palette, Globe, Save, Lock, Loader2 } from "lucide-react";
 
 export default function Account() {
   const { user, profile } = useAuth();
@@ -32,18 +36,111 @@ export default function Account() {
     weekly: true,
   });
 
-  const handleSaveProfile = () => {
+  const [loading, setLoading] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (profile?.full_name) {
+      setProfileData(prev => ({ ...prev, fullName: profile.full_name || '' }));
+    }
+    if (profile?.phone) {
+      setProfileData(prev => ({ ...prev, phone: profile.phone || '' }));
+    }
+  }, [profile]);
+
+  const handleSaveProfile = async () => {
+    if (!user?.id) {
+      toast({
+        title: t('common.error'),
+        description: language === 'fr' ? 'Vous devez être connecté' : 'You must be logged in',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: profileData.fullName,
+          phone: profileData.phone || null,
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
     toast({
       title: language === 'fr' ? 'Profil mis à jour' : 'Profile Updated',
       description: language === 'fr' ? 'Vos informations ont été enregistrées' : 'Your information has been saved',
     });
+
+      // Refresh profile
+      window.location.reload();
+    } catch (error) {
+      handleError(error);
+      toast({
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : (language === 'fr' ? 'Erreur lors de l\'enregistrement' : 'Error saving profile'),
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSaveNotifications = () => {
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: t('common.error'),
+        description: language === 'fr' ? 'Les mots de passe ne correspondent pas' : 'Passwords do not match',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: t('common.error'),
+        description: language === 'fr' ? 'Le mot de passe doit contenir au moins 6 caractères' : 'Password must be at least 6 characters',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: language === 'fr' ? 'Mot de passe mis à jour' : 'Password Updated',
+        description: language === 'fr' ? 'Votre mot de passe a été modifié avec succès' : 'Your password has been updated successfully',
+      });
+
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+    } catch (error) {
+      handleError(error);
     toast({
-      title: language === 'fr' ? 'Préférences mises à jour' : 'Preferences Updated',
-      description: language === 'fr' ? 'Vos préférences de notification ont été enregistrées' : 'Your notification preferences have been saved',
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : (language === 'fr' ? 'Erreur lors de la modification du mot de passe' : 'Error updating password'),
+        variant: 'destructive',
     });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -53,10 +150,10 @@ export default function Account() {
         <meta name="description" content="Manage your RiadPrix account settings and preferences." />
       </Helmet>
       
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
         <Header />
         
-        <main className="container mx-auto px-4 pt-24 pb-12 max-w-4xl">
+        <main className="container mx-auto px-4 pt-24 pb-12 max-w-4xl flex-1">
           {/* Page Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">
@@ -139,9 +236,18 @@ export default function Account() {
                       />
                     </div>
                   </div>
-                  <Button onClick={handleSaveProfile} className="gap-2">
+                  <Button onClick={handleSaveProfile} disabled={loading} className="gap-2">
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {language === 'fr' ? 'Enregistrement...' : 'Saving...'}
+                      </>
+                    ) : (
+                      <>
                     <Save className="h-4 w-4" />
                     {language === 'fr' ? 'Enregistrer' : 'Save Changes'}
+                      </>
+                    )}
                   </Button>
                 </CardContent>
               </Card>
@@ -156,9 +262,51 @@ export default function Account() {
                     {language === 'fr' ? 'Gérez votre mot de passe et la sécurité du compte' : 'Manage your password and account security'}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <Button variant="outline">
-                    {language === 'fr' ? 'Changer le mot de passe' : 'Change Password'}
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="currentPassword">{language === 'fr' ? 'Mot de passe actuel' : 'Current Password'}</Label>
+                      <Input
+                        id="currentPassword"
+                        type="password"
+                        value={passwordData.currentPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                        placeholder={language === 'fr' ? 'Entrez votre mot de passe actuel' : 'Enter your current password'}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="newPassword">{language === 'fr' ? 'Nouveau mot de passe' : 'New Password'}</Label>
+                      <Input
+                        id="newPassword"
+                        type="password"
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                        placeholder={language === 'fr' ? 'Entrez le nouveau mot de passe' : 'Enter new password'}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="confirmPassword">{language === 'fr' ? 'Confirmer le mot de passe' : 'Confirm Password'}</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                        placeholder={language === 'fr' ? 'Confirmez le nouveau mot de passe' : 'Confirm new password'}
+                      />
+                    </div>
+                  </div>
+                  <Button onClick={handleChangePassword} disabled={loading} variant="default" className="gap-2">
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {language === 'fr' ? 'Modification...' : 'Updating...'}
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="h-4 w-4" />
+                        {language === 'fr' ? 'Mettre à jour le mot de passe' : 'Update Password'}
+                      </>
+                    )}
                   </Button>
                 </CardContent>
               </Card>
@@ -310,6 +458,8 @@ export default function Account() {
             </TabsContent>
           </Tabs>
         </main>
+
+        <Footer />
       </div>
     </>
   );

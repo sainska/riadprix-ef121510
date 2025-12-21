@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { CitySelector } from "@/components/dashboard/CitySelector";
 import { PropertyTypeFilter } from "@/components/dashboard/PropertyTypeFilter";
@@ -11,6 +12,7 @@ import { ExportPanel } from "@/components/dashboard/ExportPanel";
 import { Helmet } from "react-helmet";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const benchmarkData = [
   { type: "Riad Traditionnel", min: 650, median: 1200, max: 3500, your: 1100, trend: "up" as const },
@@ -20,6 +22,7 @@ const benchmarkData = [
 ];
 
 const Index = () => {
+  const { t } = useLanguage();
   const [selectedCity, setSelectedCity] = useState("marrakech");
   const [selectedPropertyType, setSelectedPropertyType] = useState("all");
 
@@ -36,17 +39,72 @@ const Index = () => {
         {/* Hero Section */}
         <HeroSection />
         
+        {/* Features Section */}
+        <section id="features" className="py-20 bg-background scroll-mt-20">
+          <div className="container mx-auto px-4 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
+                {t('index.features.title')}
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                {t('index.features.subtitle')}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              {[
+                { icon: '📊', title: t('index.features.benchmarking'), desc: t('index.features.benchmarkingDesc') },
+                { icon: '📈', title: t('index.features.trends'), desc: t('index.features.trendsDesc') },
+                { icon: '💡', title: t('index.features.recommendations'), desc: t('index.features.recommendationsDesc') },
+              ].map((feature, idx) => (
+                <div key={idx} className="text-center p-6 rounded-xl border border-border/50 bg-card">
+                  <div className="text-4xl mb-4">{feature.icon}</div>
+                  <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
+                  <p className="text-sm text-muted-foreground">{feature.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* How It Works Section */}
+        <section id="how-it-works" className="py-20 bg-secondary/30 scroll-mt-20">
+          <div className="container mx-auto px-4 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
+                {t('index.howitworks.title')}
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                {t('index.howitworks.subtitle')}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              {[
+                { step: '1', title: t('index.howitworks.step1'), desc: t('index.howitworks.step1Desc') },
+                { step: '2', title: t('index.howitworks.step2'), desc: t('index.howitworks.step2Desc') },
+                { step: '3', title: t('index.howitworks.step3'), desc: t('index.howitworks.step3Desc') },
+              ].map((item, idx) => (
+                <div key={idx} className="text-center">
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl font-bold text-primary">{item.step}</span>
+                  </div>
+                  <h3 className="font-semibold text-lg mb-2">{item.title}</h3>
+                  <p className="text-sm text-muted-foreground">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+        
         {/* Dashboard Preview Section */}
         <main className="py-16 lg:py-24 bg-secondary/30">
           <div className="container mx-auto px-4 lg:px-8">
             {/* Section Header */}
             <div className="text-center mb-12 animate-fade-in">
               <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Votre Tableau de Bord
-                <span className="text-primary"> Intelligence Marché</span>
+                {t('index.dashboard.title')}
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Analysez les tendances du marché, comparez vos prix et optimisez vos revenus locatifs en temps réel.
+                {t('index.dashboard.subtitle')}
               </p>
             </div>
 
@@ -124,58 +182,35 @@ const Index = () => {
         <section className="py-20 bg-gradient-to-br from-primary/5 via-background to-teal/5">
           <div className="container mx-auto px-4 lg:px-8 text-center">
             <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Prêt à optimiser vos revenus?
+              {t('index.cta.title')}
             </h2>
             <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-              Rejoignez plus de 70,000 propriétaires qui utilisent RiadPrix pour maximiser leurs revenus locatifs.
+              {t('index.cta.subtitle')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="xl" variant="hero" className="gap-2">
-                Démarrer Maintenant
+                {t('index.cta.startNow')}
                 <ArrowRight className="h-5 w-5" />
               </Button>
               <Button size="xl" variant="outline">
-                Demander une Démo
+                {t('index.cta.requestDemo')}
               </Button>
             </div>
             <div className="flex items-center justify-center gap-6 mt-8 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-success" />
-                Essai gratuit 14 jours
+                {t('index.cta.freeTrial')}
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-success" />
-                Sans carte bancaire
+                {t('index.cta.noCard')}
               </div>
             </div>
           </div>
         </section>
 
         {/* Footer */}
-        <footer className="border-t border-border py-12 bg-card">
-          <div className="container mx-auto px-4 lg:px-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-orange-light flex items-center justify-center shadow-md shadow-primary/20">
-                  <span className="text-lg font-bold text-primary-foreground">R</span>
-                </div>
-                <div>
-                  <span className="font-display font-bold text-foreground">RiadPrix</span>
-                  <p className="text-xs text-muted-foreground">Revenue Intelligence</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-8 text-sm">
-                <a href="#" className="text-muted-foreground hover:text-primary transition-colors font-medium">Conditions</a>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-colors font-medium">Confidentialité</a>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-colors font-medium">Support</a>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-colors font-medium">Contact</a>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                © 2024 RiadPrix. Tous droits réservés.
-              </p>
-            </div>
-          </div>
-        </footer>
+        <Footer />
       </div>
     </>
   );
