@@ -7,11 +7,11 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useState } from "react";
 
 interface ExportPanelProps {
-  city?: string;
+  marketId?: string;
   propertyType?: string;
 }
 
-export function ExportPanel({ city, propertyType }: ExportPanelProps) {
+export function ExportPanel({ marketId, propertyType }: ExportPanelProps) {
   const { t, language } = useLanguage();
   const [loading, setLoading] = useState(false);
 
@@ -21,12 +21,12 @@ export function ExportPanel({ city, propertyType }: ExportPanelProps) {
       if (format === 'csv') {
         // Fetch benchmark data
         const benchmarks = await benchmarksApi.getBenchmarks({
-          city,
+          marketId,
           propertyType: propertyType as any,
         });
         
         const exportData = formatBenchmarkDataForExport(benchmarks);
-        const filename = `riadprix-benchmarks-${city || 'all'}-${new Date().toISOString().split('T')[0]}.csv`;
+        const filename = `riadprix-benchmarks-${marketId || 'all'}-${new Date().toISOString().split('T')[0]}.csv`;
         exportToCSV(exportData, filename);
         
         toast.success(language === 'fr' ? 'Export CSV réussi' : 'CSV export successful', {
@@ -35,7 +35,7 @@ export function ExportPanel({ city, propertyType }: ExportPanelProps) {
       } else {
         // PDF export
         const benchmarks = await benchmarksApi.getBenchmarks({
-          city,
+          marketId,
           propertyType: propertyType as any,
         });
         
@@ -69,7 +69,7 @@ export function ExportPanel({ city, propertyType }: ExportPanelProps) {
         `;
         
         await exportToPDF({
-          title: `RiadPrix Benchmark Report - ${city || 'All Markets'}`,
+          title: `RiadPrix Benchmark Report - ${marketId || 'All Markets'}`,
           content: tableHTML,
         });
         

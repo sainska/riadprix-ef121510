@@ -182,7 +182,7 @@ export function Header() {
                       <Settings className="mr-2 h-4 w-4" />
                       {t('nav.settings')}
                     </DropdownMenuItem>
-                    {profile?.role === 'admin' && (
+                    {user && (
                       <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer">

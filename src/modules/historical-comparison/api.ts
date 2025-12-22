@@ -5,6 +5,16 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { benchmarksApi } from '@/lib/api';
+import type { Database } from '@/integrations/supabase/types';
+
+type PropertyType = Database['public']['Enums']['property_type'];
+
+interface BenchmarkData {
+  median_price?: number | null;
+  avg_occupancy?: number | null;
+  min_price?: number | null;
+  max_price?: number | null;
+}
 
 export interface HistoricalComparison {
   currentPeriod: {
@@ -71,7 +81,7 @@ export const historicalComparisonApi = {
     // Get current period benchmarks
     const currentBenchmarks = await benchmarksApi.getBenchmarks({
       marketId,
-      propertyType: propertyType as any,
+      propertyType: propertyType as PropertyType,
       startDate: currentStart,
       endDate: currentEnd,
     });
@@ -79,13 +89,13 @@ export const historicalComparisonApi = {
     // Get previous period benchmarks
     const previousBenchmarks = await benchmarksApi.getBenchmarks({
       marketId,
-      propertyType: propertyType as any,
+      propertyType: propertyType as PropertyType,
       startDate: previousStart,
       endDate: previousEnd,
     });
 
-    const current = currentBenchmarks[0] || {};
-    const previous = previousBenchmarks[0] || {};
+    const current: BenchmarkData = currentBenchmarks[0] || {};
+    const previous: BenchmarkData = previousBenchmarks[0] || {};
 
     const currentMedian = Number(current.median_price) || 0;
     const previousMedian = Number(previous.median_price) || 0;
@@ -138,18 +148,8 @@ export const historicalComparisonApi = {
   ): Promise<YearOverYearComparison> {
     const comparisons: YearOverYearComparison['comparisons'] = [];
     const monthNames = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
     ];
 
     for (let month = 1; month <= 12; month++) {
@@ -199,7 +199,6 @@ export const historicalComparisonApi = {
     currentPrice: number,
     previousPeriod: { start: string; end: string }
   ): Promise<PercentileShift> {
-    // Get property
     const { data: property } = await supabase
       .from('properties')
       .select('market_id, property_type')
@@ -210,7 +209,6 @@ export const historicalComparisonApi = {
       throw new Error('Property not found');
     }
 
-    // Get benchmarks for both periods
     const previousBenchmarks = await benchmarksApi.getBenchmarks({
       marketId: property.market_id || undefined,
       propertyType: property.property_type,
@@ -268,7 +266,6 @@ export const historicalComparisonApi = {
   ): Promise<{ growth: number; trend: 'growing' | 'declining' | 'stable'; period: string }> {
     const now = new Date();
     const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
 
     const yoy = await this.compareYearOverYear(marketId, propertyType, currentYear);
 
@@ -279,4 +276,3 @@ export const historicalComparisonApi = {
     };
   },
 };
-

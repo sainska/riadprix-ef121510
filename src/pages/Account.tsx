@@ -53,10 +53,17 @@ export default function Account() {
     }
   }, [profile]);
 
+  const handleSaveNotifications = () => {
+    toast({
+      title: language === 'fr' ? 'Préférences enregistrées' : 'Preferences Saved',
+      description: language === 'fr' ? 'Vos préférences de notification ont été mises à jour' : 'Your notification preferences have been updated',
+    });
+  };
+
   const handleSaveProfile = async () => {
     if (!user?.id) {
       toast({
-        title: t('common.error'),
+        title: language === 'fr' ? 'Erreur' : 'Error',
         description: language === 'fr' ? 'Vous devez être connecté' : 'You must be logged in',
         variant: 'destructive',
       });
@@ -85,7 +92,7 @@ export default function Account() {
     } catch (error) {
       handleError(error);
       toast({
-        title: t('common.error'),
+        title: language === 'fr' ? 'Erreur' : 'Error',
         description: error instanceof Error ? error.message : (language === 'fr' ? 'Erreur lors de l\'enregistrement' : 'Error saving profile'),
         variant: 'destructive',
       });
@@ -97,7 +104,7 @@ export default function Account() {
   const handleChangePassword = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast({
-        title: t('common.error'),
+        title: language === 'fr' ? 'Erreur' : 'Error',
         description: language === 'fr' ? 'Les mots de passe ne correspondent pas' : 'Passwords do not match',
         variant: 'destructive',
       });
@@ -106,7 +113,7 @@ export default function Account() {
 
     if (passwordData.newPassword.length < 6) {
       toast({
-        title: t('common.error'),
+        title: language === 'fr' ? 'Erreur' : 'Error',
         description: language === 'fr' ? 'Le mot de passe doit contenir au moins 6 caractères' : 'Password must be at least 6 characters',
         variant: 'destructive',
       });
@@ -133,11 +140,11 @@ export default function Account() {
       });
     } catch (error) {
       handleError(error);
-    toast({
-        title: t('common.error'),
+      toast({
+        title: language === 'fr' ? 'Erreur' : 'Error',
         description: error instanceof Error ? error.message : (language === 'fr' ? 'Erreur lors de la modification du mot de passe' : 'Error updating password'),
         variant: 'destructive',
-    });
+      });
     } finally {
       setLoading(false);
     }

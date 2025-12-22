@@ -231,9 +231,9 @@ export const recommendationsApi = {
       if (Math.abs(diff) < marketMedian * 0.05) {
         reasoning += `Your current price (${currentPrice} MAD) is well-aligned with market conditions. `;
       } else if (diff > 0) {
-        reasoning += `Consider increasing by ${Math.abs(percentDiff)}% to optimize revenue. `;
+        reasoning += `Consider increasing by ${Math.abs(Number(percentDiff))}% to optimize revenue. `;
       } else {
-        reasoning += `Your price may be ${Math.abs(percentDiff)}% above optimal. `;
+        reasoning += `Your price may be ${Math.abs(Number(percentDiff))}% above optimal. `;
       }
     }
 
