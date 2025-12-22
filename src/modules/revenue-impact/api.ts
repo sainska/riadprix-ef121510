@@ -50,7 +50,6 @@ export const revenueImpactApi = {
     currentPrice: number,
     recommendedPrice: number
   ): Promise<RevenueImpact> {
-    // Get property details
     const { data: property } = await supabase
       .from('properties')
       .select('market_id, property_type')
@@ -61,42 +60,33 @@ export const revenueImpactApi = {
       throw new Error('Property not found');
     }
 
-    // Get market data for assumptions
     const benchmarks = await benchmarksApi.getBenchmarks({
       marketId: property.market_id || undefined,
       propertyType: property.property_type,
     });
 
     const latestBenchmark = benchmarks[0];
-    const avgOccupancy = Number(latestBenchmark.avg_occupancy) || 70;
+    const avgOccupancy = Number(latestBenchmark?.avg_occupancy) || 70;
 
-    // Assumptions
     const assumptions = {
-      averageStayLength: 3, // days
+      averageStayLength: 3,
       seasonalityFactor: 1.0,
-      priceElasticity: -0.5, // For every 10% price increase, demand drops by 5%
+      priceElasticity: -0.5,
     };
 
-    // Calculate current scenario
     const currentOccupancy = avgOccupancy;
     const daysInMonth = 30;
     const currentMonthlyBookings = (currentOccupancy / 100) * daysInMonth;
     const currentMonthlyRevenue = currentPrice * currentMonthlyBookings * assumptions.averageStayLength;
     const currentYearlyRevenue = currentMonthlyRevenue * 12;
 
-    // Calculate recommended scenario
     const priceChangePercent = ((recommendedPrice - currentPrice) / currentPrice) * 100;
     const demandChangePercent = priceChangePercent * assumptions.priceElasticity;
-    const estimatedOccupancy = Math.max(
-      30,
-      Math.min(95, currentOccupancy + demandChangePercent)
-    );
+    const estimatedOccupancy = Math.max(30, Math.min(95, currentOccupancy + demandChangePercent));
     const recommendedMonthlyBookings = (estimatedOccupancy / 100) * daysInMonth;
-    const recommendedMonthlyRevenue =
-      recommendedPrice * recommendedMonthlyBookings * assumptions.averageStayLength;
+    const recommendedMonthlyRevenue = recommendedPrice * recommendedMonthlyBookings * assumptions.averageStayLength;
     const recommendedYearlyRevenue = recommendedMonthlyRevenue * 12;
 
-    // Calculate impact
     const monthlyChange = recommendedMonthlyRevenue - currentMonthlyRevenue;
     const yearlyChange = recommendedYearlyRevenue - currentYearlyRevenue;
     const percentageChange = (yearlyChange / currentYearlyRevenue) * 100;
@@ -148,11 +138,12 @@ export const revenueImpactApi = {
     });
 
     const latestBenchmark = benchmarks[0];
-    const avgOccupancy = Number(latestBenchmark.avg_occupancy) || 70;
-
+    const avgOccupancy = Number(latestBenchmark?.avg_occupancy) || 70;
     const priceElasticity = -0.5;
     const averageStayLength = 3;
     const daysInMonth = 30;
+
+    const currentYearlyRevenue = currentPrice * (avgOccupancy / 100) * daysInMonth * averageStayLength * 12;
 
     return newPrices.map((newPrice) => {
       const priceChangePercent = ((newPrice - currentPrice) / currentPrice) * 100;
@@ -161,20 +152,16 @@ export const revenueImpactApi = {
       const monthlyBookings = (estimatedOccupancy / 100) * daysInMonth;
       const monthlyRevenue = newPrice * monthlyBookings * averageStayLength;
       const yearlyRevenue = monthlyRevenue * 12;
+      const changeFromCurrent = yearlyRevenue - currentYearlyRevenue;
+      const percentageChange = (changeFromCurrent / currentYearlyRevenue) * 100;
 
       return {
         newPrice,
         estimatedOccupancy: Math.round(estimatedOccupancy * 10) / 10,
         monthlyRevenue: Math.round(monthlyRevenue),
         yearlyRevenue: Math.round(yearlyRevenue),
-        changeFromCurrent: Math.round(yearlyRevenue - (currentPrice * (avgOccupancy / 100) * daysInMonth * averageStayLength * 12)),
-        percentageChange: Math.round(
-          ((yearlyRevenue - (currentPrice * (avgOccupancy / 100) * daysInMonth * averageStayLength * 12)) /
-            (currentPrice * (avgOccupancy / 100) * daysInMonth * averageStayLength * 12)) *
-            100 *
-            10) /
-            10
-        ),
+        changeFromCurrent: Math.round(changeFromCurrent),
+        percentageChange: Math.round(percentageChange * 10) / 10,
       };
     });
   },
@@ -189,16 +176,14 @@ export const revenueImpactApi = {
     const priceElasticity = -0.5;
     const averageStayLength = 3;
     const daysInMonth = 30;
-
     const scenarios: Array<{ price: number; occupancy: number; revenue: number }> = [];
 
-    // Test prices from -30% to +30%
     for (let priceChange = -30; priceChange <= 30; priceChange += 5) {
       const price = basePrice * (1 + priceChange / 100);
       const demandChange = priceChange * priceElasticity;
       const occupancy = Math.max(30, Math.min(95, baseOccupancy + demandChange));
       const monthlyBookings = (occupancy / 100) * daysInMonth;
-      const revenue = price * monthlyBookings * averageStayLength * 12; // Yearly
+      const revenue = price * monthlyBookings * averageStayLength * 12;
 
       scenarios.push({
         price: Math.round(price),
@@ -217,14 +202,9 @@ export const revenueImpactApi = {
     propertyId: string,
     price: number,
     occupancy: number
-  ): Promise<{
-    monthly: number;
-    yearly: number;
-    perBooking: number;
-  }> {
+  ): Promise<{ monthly: number; yearly: number; perBooking: number }> {
     const averageStayLength = 3;
     const daysInMonth = 30;
-
     const monthlyBookings = (occupancy / 100) * daysInMonth;
     const perBooking = price * averageStayLength;
     const monthly = perBooking * monthlyBookings;
@@ -237,4 +217,3 @@ export const revenueImpactApi = {
     };
   },
 };
-

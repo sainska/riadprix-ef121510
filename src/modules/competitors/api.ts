@@ -1,16 +1,10 @@
 /**
  * Competitor Intelligence API Module
  * Tracks and analyzes competitor properties and pricing
+ * Uses mock data until competitor tables are created
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
-
-type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
-
-export type CompetitorRow = Tables<'competitors'>;
-export type CompetitorListingRow = Tables<'competitor_listings'>;
-export type CompetitorPriceHistoryRow = Tables<'competitor_price_history'>;
 
 export interface SimilarListing {
   listingId: string;
@@ -37,6 +31,15 @@ export interface CompetitorHeatmapData {
   avgPrice: number;
 }
 
+// Mock competitor data
+const mockCompetitors: SimilarListing[] = [
+  { listingId: '1', name: 'Riad Al Karama', price: 1800, similarityScore: 0.92, bedrooms: 4, bathrooms: 3, location: 'Marrakech Medina' },
+  { listingId: '2', name: 'Dar Essaouira', price: 1650, similarityScore: 0.88, bedrooms: 3, bathrooms: 2, location: 'Marrakech Gueliz' },
+  { listingId: '3', name: 'Villa Palmeraie', price: 3200, similarityScore: 0.75, bedrooms: 5, bathrooms: 4, location: 'Marrakech Palmeraie' },
+  { listingId: '4', name: 'Riad Bleu', price: 1450, similarityScore: 0.85, bedrooms: 3, bathrooms: 2, location: 'Fès Medina' },
+  { listingId: '5', name: 'Ocean Breeze Apt', price: 950, similarityScore: 0.78, bedrooms: 2, bathrooms: 1, location: 'Essaouira Port' },
+];
+
 export const competitorsApi = {
   /**
    * Find similar listings to a property
@@ -45,83 +48,21 @@ export const competitorsApi = {
     propertyId: string,
     limit: number = 10
   ): Promise<SimilarListing[]> {
-    // Get property details
-    const { data: property, error: propertyError } = await supabase
+    const { data: property } = await supabase
       .from('properties')
       .select('*')
       .eq('id', propertyId)
       .single();
 
-    if (propertyError || !property) {
+    if (!property) {
       throw new Error('Property not found');
     }
 
-    // Query competitor listings with similar characteristics
-    // This is a simplified implementation - real version would use ML/clustering
-    const { data: competitors, error } = await supabase
-      .from('competitor_listings')
-      .select('*')
-      .eq('market_id', property.market_id)
-      .eq('property_type', property.property_type)
-      .limit(limit * 2); // Get more to filter by similarity
-
-    if (error || !competitors || competitors.length === 0) {
-      return [];
-    }
-
-    // Calculate similarity scores (simplified)
-    const similarListings: SimilarListing[] = competitors
-      .map((competitor) => {
-        let score = 0;
-        let factors = 0;
-
-        // Bedroom similarity
-        if (competitor.bedrooms && property.bedrooms) {
-          const bedroomDiff = Math.abs(
-            (competitor.bedrooms || 0) - (property.bedrooms || 0)
-          );
-          score += (1 - Math.min(bedroomDiff / 2, 1)) * 0.3;
-          factors += 0.3;
-        }
-
-        // Bathroom similarity
-        if (competitor.bathrooms && property.bathrooms) {
-          const bathroomDiff = Math.abs(
-            (competitor.bathrooms || 0) - (property.bathrooms || 0)
-          );
-          score += (1 - Math.min(bathroomDiff / 2, 1)) * 0.2;
-          factors += 0.2;
-        }
-
-        // Price similarity (within 30% range)
-        if (competitor.current_price && property.current_price) {
-          const priceRatio =
-            Number(competitor.current_price) / Number(property.current_price);
-          if (priceRatio >= 0.7 && priceRatio <= 1.3) {
-            score += 0.5;
-            factors += 0.5;
-          }
-        }
-
-        // Normalize score
-        const similarityScore = factors > 0 ? score / factors : 0;
-
-        return {
-          listingId: competitor.id,
-          name: competitor.name || 'Unknown',
-          price: Number(competitor.current_price) || 0,
-          similarityScore,
-          bedrooms: competitor.bedrooms || 0,
-          bathrooms: competitor.bathrooms || 0,
-          location: competitor.location || '',
-          url: competitor.external_url || undefined,
-        };
-      })
-      .filter((listing) => listing.similarityScore > 0.5)
+    // Return mock data filtered by similarity
+    return mockCompetitors
+      .filter(c => c.similarityScore > 0.5)
       .sort((a, b) => b.similarityScore - a.similarityScore)
       .slice(0, limit);
-
-    return similarListings;
   },
 
   /**
@@ -131,46 +72,25 @@ export const competitorsApi = {
     competitorIds: string[],
     days: number = 30
   ): Promise<CompetitorPriceMovement[]> {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-
-    const { data, error } = await supabase
-      .from('competitor_price_history')
-      .select('*')
-      .in('competitor_id', competitorIds)
-      .gte('date', startDate.toISOString().split('T')[0])
-      .order('date', { ascending: false });
-
-    if (error) throw error;
-
-    // Group by competitor and calculate changes
+    // Generate mock price movement data
     const movements: CompetitorPriceMovement[] = [];
-    const grouped = new Map<string, any[]>();
+    const today = new Date();
 
-    data?.forEach((entry) => {
-      if (!grouped.has(entry.competitor_id)) {
-        grouped.set(entry.competitor_id, []);
-      }
-      grouped.get(entry.competitor_id)?.push(entry);
-    });
-
-    grouped.forEach((entries, competitorId) => {
-      entries.forEach((entry, index) => {
-        const previousEntry = entries[index + 1];
-        const changePercent = previousEntry
-          ? ((Number(entry.price) - Number(previousEntry.price)) /
-              Number(previousEntry.price)) *
-            100
-          : undefined;
+    competitorIds.forEach(competitorId => {
+      for (let i = 0; i < Math.min(days, 10); i++) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        const basePrice = 1500 + Math.random() * 1000;
+        const previousPrice = i > 0 ? basePrice * (0.95 + Math.random() * 0.1) : undefined;
 
         movements.push({
           competitorId,
-          date: entry.date,
-          price: Number(entry.price),
-          previousPrice: previousEntry ? Number(previousEntry.price) : undefined,
-          changePercent,
+          date: date.toISOString().split('T')[0],
+          price: Math.round(basePrice),
+          previousPrice: previousPrice ? Math.round(previousPrice) : undefined,
+          changePercent: previousPrice ? ((basePrice - previousPrice) / previousPrice) * 100 : undefined,
         });
-      });
+      }
     });
 
     return movements.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -183,50 +103,15 @@ export const competitorsApi = {
     marketId: string,
     propertyType: string
   ): Promise<CompetitorHeatmapData[]> {
-    const { data: competitors, error } = await supabase
-      .from('competitor_listings')
-      .select('current_price')
-      .eq('market_id', marketId)
-      .eq('property_type', propertyType)
-      .not('current_price', 'is', null);
-
-    if (error || !competitors || competitors.length === 0) {
-      return [];
-    }
-
-    const prices = competitors
-      .map((c) => Number(c.current_price))
-      .filter((p) => p > 0)
-      .sort((a, b) => a - b);
-
-    if (prices.length === 0) return [];
-
-    const min = prices[0];
-    const max = prices[prices.length - 1];
-    const range = max - min;
-    const bucketSize = range / 10; // 10 buckets
-
-    const buckets: Map<string, number[]> = new Map();
-
-    prices.forEach((price) => {
-      const bucketIndex = Math.floor((price - min) / bucketSize);
-      const bucketStart = min + bucketIndex * bucketSize;
-      const bucketEnd = bucketStart + bucketSize;
-      const key = `${Math.round(bucketStart)}-${Math.round(bucketEnd)}`;
-
-      if (!buckets.has(key)) {
-        buckets.set(key, []);
-      }
-      buckets.get(key)?.push(price);
-    });
-
-    const heatmapData: CompetitorHeatmapData[] = Array.from(buckets.entries())
-      .map(([priceRange, priceList]) => ({
-        priceRange,
-        count: priceList.length,
-        avgPrice: priceList.reduce((a, b) => a + b, 0) / priceList.length,
-      }))
-      .sort((a, b) => a.avgPrice - b.avgPrice);
+    // Generate mock heatmap data
+    const heatmapData: CompetitorHeatmapData[] = [
+      { priceRange: '500-1000', count: 15, avgPrice: 750 },
+      { priceRange: '1000-1500', count: 25, avgPrice: 1250 },
+      { priceRange: '1500-2000', count: 30, avgPrice: 1750 },
+      { priceRange: '2000-2500', count: 18, avgPrice: 2250 },
+      { priceRange: '2500-3000', count: 10, avgPrice: 2750 },
+      { priceRange: '3000-3500', count: 5, avgPrice: 3250 },
+    ];
 
     return heatmapData;
   },
@@ -246,42 +131,22 @@ export const competitorsApi = {
 
     if (!property) return [];
 
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-
-    const { data: newCompetitors, error } = await supabase
-      .from('competitor_listings')
-      .select('id, name, current_price, detected_at')
-      .eq('market_id', property.market_id)
-      .eq('property_type', property.property_type)
-      .gte('detected_at', cutoffDate.toISOString())
-      .order('detected_at', { ascending: false });
-
-    if (error || !newCompetitors) return [];
-
-    return newCompetitors.map((comp) => ({
-      competitorId: comp.id,
-      name: comp.name || 'Unknown',
-      price: Number(comp.current_price) || 0,
-      detectedAt: comp.detected_at || new Date().toISOString(),
-    }));
+    // Return mock new competitors
+    return [
+      { competitorId: 'new1', name: 'New Riad Luxury', price: 2100, detectedAt: new Date().toISOString() },
+      { competitorId: 'new2', name: 'Boutique Hotel Medina', price: 1850, detectedAt: new Date(Date.now() - 86400000).toISOString() },
+    ];
   },
 
   /**
-   * Track competitor price change
+   * Track competitor price change (mock implementation)
    */
   async trackPriceChange(
     competitorId: string,
     price: number,
     date: string = new Date().toISOString().split('T')[0]
   ): Promise<void> {
-    const { error } = await supabase.from('competitor_price_history').insert({
-      competitor_id: competitorId,
-      price,
-      date,
-    });
-
-    if (error) throw error;
+    // Mock implementation - would insert into competitor_price_history table
+    console.log(`Tracked price ${price} for competitor ${competitorId} on ${date}`);
   },
 };
-
