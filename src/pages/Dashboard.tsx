@@ -28,7 +28,6 @@ export default function Dashboard() {
     queryFn: async () => {
       try {
         const benchmarks = await benchmarksApi.getBenchmarks({
-          city: selectedCity,
           propertyType: selectedPropertyType !== "all" ? selectedPropertyType as PropertyType : undefined,
         });
         
@@ -94,7 +93,7 @@ export default function Dashboard() {
             )}
           </div>
 
-          <ExportPanel city={selectedCity} propertyType={selectedPropertyType} />
+          <ExportPanel propertyType={selectedPropertyType} />
         </main>
         <Footer />
       </div>

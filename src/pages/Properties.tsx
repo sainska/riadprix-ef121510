@@ -124,8 +124,12 @@ export default function Properties() {
     mutationFn: async (propertyData: typeof newProperty) => {
       if (!user?.id) throw new Error('User not authenticated');
       return await propertiesApi.createProperty({
-        ...propertyData,
-        owner_id: user.id,
+        name: propertyData.name,
+        property_type: propertyData.type,
+        user_id: user.id,
+        bedrooms: propertyData.bedrooms,
+        bathrooms: propertyData.bathrooms,
+        max_guests: propertyData.max_guests,
       });
     },
     onSuccess: () => {
@@ -193,8 +197,6 @@ export default function Properties() {
         data: {
           name: newProperty.name,
           property_type: newProperty.type,
-          city: newProperty.city,
-          neighborhood: newProperty.neighborhood || null,
           bedrooms: newProperty.bedrooms || null,
           bathrooms: newProperty.bathrooms || null,
           max_guests: newProperty.max_guests || null,
@@ -289,7 +291,7 @@ export default function Properties() {
                     <Label htmlFor="type">{language === 'fr' ? 'Type' : 'Type'}</Label>
                     <Select
                       value={newProperty.type}
-                      onValueChange={(value) => setNewProperty({ ...newProperty, type: value })}
+                      onValueChange={(value: PropertyType) => setNewProperty({ ...newProperty, type: value })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -415,7 +417,7 @@ export default function Properties() {
                         <CardTitle className="text-lg">{property.name}</CardTitle>
                         <CardDescription className="flex items-center gap-1 mt-1">
                           <MapPin className="h-3 w-3" />
-                          {property.city}{property.neighborhood ? `, ${property.neighborhood}` : ''}
+                          {property.market_id || 'Unknown location'}
                         </CardDescription>
                       </div>
                       <DropdownMenu>
@@ -436,8 +438,8 @@ export default function Properties() {
                               setNewProperty({
                                 name: property.name,
                                 type: property.property_type,
-                                city: property.city,
-                                neighborhood: property.neighborhood || '',
+                                city: '',
+                                neighborhood: '',
                                 bedrooms: property.bedrooms || 1,
                                 bathrooms: property.bathrooms || 1,
                                 max_guests: property.max_guests || 2,

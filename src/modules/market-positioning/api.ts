@@ -139,10 +139,10 @@ export const marketPositioningApi = {
       .from('pricing_data')
       .select('min_price, median_price, max_price')
       .eq('market_id', marketId)
-      .eq('property_type', propertyType)
+      .eq('property_type', propertyType as any)
       .order('date', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (!pricingData) {
       return [];
