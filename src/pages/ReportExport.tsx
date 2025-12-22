@@ -1,25 +1,72 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { FileText, FileSpreadsheet, Download, Calendar, Building, CheckCircle } from 'lucide-react';
+import { FileText, FileSpreadsheet, Download, Calendar, Building, CheckCircle, Loader2 } from 'lucide-react';
 import { exportToCSV, exportToPDF, ExportData, ReportConfig } from '@/lib/export';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 type ReportType = 'market' | 'property' | 'recommendations' | 'analytics';
+
+interface MarketData {
+  id: string;
+  name: string;
+  name_fr: string | null;
+  country: string;
+}
+
+interface BenchmarkData {
+  id: string;
+  market_id: string;
+  property_type: string;
+  median_price: number | null;
+  avg_occupancy: number | null;
+  period_start: string;
+  period_end: string;
+  min_price: number | null;
+  max_price: number | null;
+  total_listings: number | null;
+}
+
+interface PropertyData {
+  id: string;
+  name: string;
+  property_type: string;
+  bedrooms: number | null;
+  current_price: number | null;
+  is_active: boolean | null;
+  market_id: string | null;
+}
+
+interface RecommendationData {
+  id: string;
+  property_id: string;
+  recommended_price: number;
+  confidence_score: number | null;
+  reasoning: string | null;
+  valid_from: string;
+  valid_to: string;
+  is_applied: boolean | null;
+}
 
 export default function ReportExport() {
   const { language } = useLanguage();
   const { user } = useAuth();
   const [selectedReport, setSelectedReport] = useState<ReportType>('market');
   const [isExporting, setIsExporting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [lastExportId, setLastExportId] = useState<string | null>(null);
+  
+  // Real data states
+  const [markets, setMarkets] = useState<MarketData[]>([]);
+  const [benchmarks, setBenchmarks] = useState<BenchmarkData[]>([]);
+  const [properties, setProperties] = useState<PropertyData[]>([]);
+  const [recommendations, setRecommendations] = useState<RecommendationData[]>([]);
 
   const reportTypes = {
     market: {
@@ -48,64 +95,221 @@ export default function ReportExport() {
     },
   };
 
-  // Generate sample data based on report type
+  // Fetch real data from Supabase
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch markets
+        const { data: marketsData, error: marketsError } = await supabase
+          .from('markets')
+          .select('id, name, name_fr, country')
+          .eq('is_active', true)
+          .order('name');
+        
+        if (marketsError) throw marketsError;
+        setMarkets(marketsData || []);
+
+        // Fetch benchmarks
+        const { data: benchmarksData, error: benchmarksError } = await supabase
+          .from('benchmarks')
+          .select('*')
+          .order('period_start', { ascending: false })
+          .limit(50);
+        
+        if (benchmarksError) throw benchmarksError;
+        setBenchmarks(benchmarksData || []);
+
+        // Fetch user properties if logged in
+        if (user) {
+          const { data: propertiesData, error: propertiesError } = await supabase
+            .from('properties')
+            .select('id, name, property_type, bedrooms, current_price, is_active, market_id')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+          
+          if (propertiesError) throw propertiesError;
+          setProperties(propertiesData || []);
+
+          // Fetch recommendations for user's properties
+          if (propertiesData && propertiesData.length > 0) {
+            const propertyIds = propertiesData.map(p => p.id);
+            const { data: recsData, error: recsError } = await supabase
+              .from('recommendations')
+              .select('*')
+              .in('property_id', propertyIds)
+              .order('created_at', { ascending: false });
+            
+            if (recsError) throw recsError;
+            setRecommendations(recsData || []);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error(language === 'fr' ? 'Erreur lors du chargement des données' : 'Error loading data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user, language]);
+
+  // Get market name by ID
+  const getMarketName = (marketId: string | null): string => {
+    if (!marketId) return language === 'fr' ? 'Non spécifié' : 'Not specified';
+    const market = markets.find(m => m.id === marketId);
+    if (!market) return language === 'fr' ? 'Inconnu' : 'Unknown';
+    return language === 'fr' && market.name_fr ? market.name_fr : market.name;
+  };
+
+  // Format property type
+  const formatPropertyType = (type: string): string => {
+    const types: Record<string, { en: string; fr: string }> = {
+      riad: { en: 'Riad', fr: 'Riad' },
+      apartment: { en: 'Apartment', fr: 'Appartement' },
+      villa: { en: 'Villa', fr: 'Villa' },
+      hotel: { en: 'Hotel', fr: 'Hôtel' },
+      guesthouse: { en: 'Guesthouse', fr: 'Maison d\'hôtes' },
+      other: { en: 'Other', fr: 'Autre' },
+    };
+    return types[type]?.[language] || type;
+  };
+
+  // Generate report data based on report type using REAL data
   const generateReportData = (type: ReportType): ExportData => {
-    const today = new Date().toISOString().split('T')[0];
-    
     switch (type) {
-      case 'market':
-        return {
-          headers: language === 'fr' 
-            ? ['Marché', 'Type de Propriété', 'Prix Moyen (MAD)', 'Taux d\'Occupation (%)', 'Tendance', 'Période']
-            : ['Market', 'Property Type', 'Avg Price (MAD)', 'Occupancy Rate (%)', 'Trend', 'Period'],
-          rows: [
-            ['Marrakech', 'Riad', 1850, '72%', '↑ +5.2%', today],
-            ['Marrakech', 'Apartment', 950, '68%', '↑ +3.1%', today],
-            ['Marrakech', 'Villa', 3200, '65%', '→ 0%', today],
-            ['Fès', 'Riad', 1450, '58%', '↑ +2.8%', today],
-            ['Fès', 'Guesthouse', 780, '62%', '↓ -1.2%', today],
-            ['Essaouira', 'Riad', 1280, '70%', '↑ +4.5%', today],
-            ['Casablanca', 'Apartment', 1100, '75%', '↑ +2.0%', today],
-            ['Tangier', 'Villa', 2800, '55%', '↑ +6.3%', today],
+      case 'market': {
+        const headers = language === 'fr' 
+          ? ['Marché', 'Type de Propriété', 'Prix Médian (MAD)', 'Taux d\'Occupation (%)', 'Prix Min (MAD)', 'Prix Max (MAD)', 'Nombre de Listings', 'Période']
+          : ['Market', 'Property Type', 'Median Price (MAD)', 'Occupancy Rate (%)', 'Min Price (MAD)', 'Max Price (MAD)', 'Total Listings', 'Period'];
+        
+        if (benchmarks.length === 0) {
+          return { headers, rows: [] };
+        }
+
+        const rows = benchmarks.map(b => [
+          getMarketName(b.market_id),
+          formatPropertyType(b.property_type),
+          b.median_price ? `${Number(b.median_price).toLocaleString()}` : '-',
+          b.avg_occupancy ? `${Number(b.avg_occupancy).toFixed(1)}%` : '-',
+          b.min_price ? `${Number(b.min_price).toLocaleString()}` : '-',
+          b.max_price ? `${Number(b.max_price).toLocaleString()}` : '-',
+          b.total_listings || 0,
+          `${b.period_start} → ${b.period_end}`,
+        ]);
+
+        return { headers, rows };
+      }
+      
+      case 'property': {
+        const headers = language === 'fr'
+          ? ['Nom', 'Type', 'Emplacement', 'Chambres', 'Prix Actuel (MAD)', 'Statut']
+          : ['Name', 'Type', 'Location', 'Bedrooms', 'Current Price (MAD)', 'Status'];
+        
+        if (properties.length === 0) {
+          return { headers, rows: [] };
+        }
+
+        const rows = properties.map(p => [
+          p.name,
+          formatPropertyType(p.property_type),
+          getMarketName(p.market_id),
+          p.bedrooms || '-',
+          p.current_price ? `${Number(p.current_price).toLocaleString()}` : '-',
+          p.is_active 
+            ? (language === 'fr' ? 'Actif' : 'Active') 
+            : (language === 'fr' ? 'Inactif' : 'Inactive'),
+        ]);
+
+        return { headers, rows };
+      }
+      
+      case 'recommendations': {
+        const headers = language === 'fr'
+          ? ['Propriété', 'Prix Recommandé (MAD)', 'Confiance (%)', 'Raison', 'Valide Du', 'Valide Jusqu\'au', 'Appliqué']
+          : ['Property', 'Recommended Price (MAD)', 'Confidence (%)', 'Reason', 'Valid From', 'Valid Until', 'Applied'];
+        
+        if (recommendations.length === 0) {
+          return { headers, rows: [] };
+        }
+
+        const rows = recommendations.map(r => {
+          const property = properties.find(p => p.id === r.property_id);
+          return [
+            property?.name || (language === 'fr' ? 'Inconnu' : 'Unknown'),
+            `${Number(r.recommended_price).toLocaleString()}`,
+            r.confidence_score ? `${(Number(r.confidence_score) * 100).toFixed(0)}%` : '-',
+            r.reasoning || '-',
+            r.valid_from,
+            r.valid_to,
+            r.is_applied 
+              ? (language === 'fr' ? 'Oui' : 'Yes') 
+              : (language === 'fr' ? 'Non' : 'No'),
+          ];
+        });
+
+        return { headers, rows };
+      }
+      
+      case 'analytics': {
+        const headers = language === 'fr'
+          ? ['Métrique', 'Valeur', 'Détails']
+          : ['Metric', 'Value', 'Details'];
+        
+        // Calculate analytics from real data
+        const totalProperties = properties.length;
+        const activeProperties = properties.filter(p => p.is_active).length;
+        const avgPrice = properties.length > 0 
+          ? properties.reduce((sum, p) => sum + (Number(p.current_price) || 0), 0) / properties.filter(p => p.current_price).length
+          : 0;
+        const totalRecommendations = recommendations.length;
+        const appliedRecommendations = recommendations.filter(r => r.is_applied).length;
+        const avgConfidence = recommendations.length > 0
+          ? recommendations.reduce((sum, r) => sum + (Number(r.confidence_score) || 0), 0) / recommendations.length * 100
+          : 0;
+        
+        // Get occupancy from benchmarks
+        const avgOccupancy = benchmarks.length > 0
+          ? benchmarks.reduce((sum, b) => sum + (Number(b.avg_occupancy) || 0), 0) / benchmarks.filter(b => b.avg_occupancy).length
+          : 0;
+
+        const rows = [
+          [
+            language === 'fr' ? 'Total Propriétés' : 'Total Properties',
+            totalProperties.toString(),
+            `${activeProperties} ${language === 'fr' ? 'actives' : 'active'}, ${totalProperties - activeProperties} ${language === 'fr' ? 'inactives' : 'inactive'}`,
           ],
-        };
-      case 'property':
-        return {
-          headers: language === 'fr'
-            ? ['Nom', 'Type', 'Emplacement', 'Chambres', 'Prix Actuel (MAD)', 'Statut', 'Performance']
-            : ['Name', 'Type', 'Location', 'Bedrooms', 'Current Price (MAD)', 'Status', 'Performance'],
-          rows: [
-            ['Riad Jasmine', 'Riad', 'Marrakech Medina', 4, 1800, 'Active', 'Excellent'],
-            ['Villa Atlas', 'Villa', 'Marrakech Palmeraie', 6, 3500, 'Active', 'Good'],
-            ['Dar Fès', 'Riad', 'Fès Medina', 3, 1400, 'Active', 'Average'],
-            ['Ocean View Apt', 'Apartment', 'Essaouira', 2, 950, 'Active', 'Excellent'],
+          [
+            language === 'fr' ? 'Prix Moyen' : 'Average Price',
+            avgPrice > 0 ? `${avgPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })} MAD` : '-',
+            language === 'fr' ? 'Prix moyen de vos propriétés' : 'Average price of your properties',
           ],
-        };
-      case 'recommendations':
-        return {
-          headers: language === 'fr'
-            ? ['Propriété', 'Prix Actuel (MAD)', 'Prix Recommandé (MAD)', 'Variation', 'Confiance', 'Raison', 'Valide Jusqu\'au']
-            : ['Property', 'Current Price (MAD)', 'Recommended Price (MAD)', 'Change', 'Confidence', 'Reason', 'Valid Until'],
-          rows: [
-            ['Riad Jasmine', 1800, 1950, '+8.3%', '92%', language === 'fr' ? 'Forte demande saisonnière' : 'High seasonal demand', '2025-01-15'],
-            ['Villa Atlas', 3500, 3200, '-8.6%', '78%', language === 'fr' ? 'Concurrence accrue' : 'Increased competition', '2025-01-10'],
-            ['Dar Fès', 1400, 1550, '+10.7%', '85%', language === 'fr' ? 'Événement local' : 'Local event', '2025-01-08'],
-            ['Ocean View Apt', 950, 1050, '+10.5%', '88%', language === 'fr' ? 'Haute saison' : 'Peak season', '2025-01-20'],
+          [
+            language === 'fr' ? 'Taux d\'Occupation Moyen' : 'Average Occupancy Rate',
+            avgOccupancy > 0 ? `${avgOccupancy.toFixed(1)}%` : '-',
+            language === 'fr' ? 'Basé sur les données du marché' : 'Based on market data',
           ],
-        };
-      case 'analytics':
-        return {
-          headers: language === 'fr'
-            ? ['Métrique', 'Ce Mois', 'Mois Dernier', 'Variation', 'Objectif', 'Statut']
-            : ['Metric', 'This Month', 'Last Month', 'Change', 'Target', 'Status'],
-          rows: [
-            [language === 'fr' ? 'Revenu Total' : 'Total Revenue', '45,000 MAD', '42,000 MAD', '+7.1%', '50,000 MAD', '90%'],
-            [language === 'fr' ? 'Taux d\'Occupation' : 'Occupancy Rate', '72%', '68%', '+4pp', '75%', '96%'],
-            [language === 'fr' ? 'Prix Moyen' : 'Average Price', '1,650 MAD', '1,580 MAD', '+4.4%', '1,700 MAD', '97%'],
-            [language === 'fr' ? 'Réservations' : 'Bookings', '28', '25', '+12%', '30', '93%'],
-            [language === 'fr' ? 'Score Avis' : 'Review Score', '4.8/5', '4.7/5', '+2.1%', '4.9/5', '98%'],
+          [
+            language === 'fr' ? 'Recommandations Totales' : 'Total Recommendations',
+            totalRecommendations.toString(),
+            `${appliedRecommendations} ${language === 'fr' ? 'appliquées' : 'applied'}`,
           ],
-        };
+          [
+            language === 'fr' ? 'Confiance Moyenne des Recommandations' : 'Avg Recommendation Confidence',
+            avgConfidence > 0 ? `${avgConfidence.toFixed(0)}%` : '-',
+            language === 'fr' ? 'Score de confiance moyen' : 'Average confidence score',
+          ],
+          [
+            language === 'fr' ? 'Marchés Couverts' : 'Markets Covered',
+            markets.length.toString(),
+            markets.slice(0, 3).map(m => language === 'fr' && m.name_fr ? m.name_fr : m.name).join(', ') + (markets.length > 3 ? '...' : ''),
+          ],
+        ];
+
+        return { headers, rows };
+      }
+      
       default:
         return { headers: [], rows: [] };
     }
@@ -127,6 +331,7 @@ export default function ReportExport() {
       filters: {
         [language === 'fr' ? 'Type de Rapport' : 'Report Type']: reportTypes[selectedReport].title,
         [language === 'fr' ? 'Langue' : 'Language']: language === 'fr' ? 'Français' : 'English',
+        [language === 'fr' ? 'Source' : 'Source']: language === 'fr' ? 'Données en direct' : 'Live database',
       },
       language,
     };
@@ -136,6 +341,15 @@ export default function ReportExport() {
     setIsExporting(true);
     try {
       const data = generateReportData(selectedReport);
+      
+      if (data.rows.length === 0) {
+        toast.warning(
+          language === 'fr' ? 'Aucune donnée à exporter' : 'No data to export',
+          { description: language === 'fr' ? 'Veuillez d\'abord ajouter des données' : 'Please add some data first' }
+        );
+        return;
+      }
+
       const config = getReportConfig();
       const filename = `riadprix-${selectedReport}-report-${new Date().toISOString().split('T')[0]}.csv`;
       
@@ -157,6 +371,15 @@ export default function ReportExport() {
     setIsExporting(true);
     try {
       const data = generateReportData(selectedReport);
+      
+      if (data.rows.length === 0) {
+        toast.warning(
+          language === 'fr' ? 'Aucune donnée à exporter' : 'No data to export',
+          { description: language === 'fr' ? 'Veuillez d\'abord ajouter des données' : 'Please add some data first' }
+        );
+        return;
+      }
+
       const config = getReportConfig();
       
       const reportId = await exportToPDF({
@@ -177,6 +400,8 @@ export default function ReportExport() {
     }
   };
 
+  const currentData = generateReportData(selectedReport);
+
   return (
     <>
       <Helmet>
@@ -193,8 +418,8 @@ export default function ReportExport() {
             </h1>
             <p className="text-muted-foreground">
               {language === 'fr' 
-                ? 'Générez des rapports professionnels avec en-tête et pied de page personnalisés'
-                : 'Generate professional reports with custom letterhead and footer'}
+                ? 'Générez des rapports professionnels avec données en temps réel'
+                : 'Generate professional reports with real-time data'}
             </p>
           </div>
 
@@ -254,15 +479,11 @@ export default function ReportExport() {
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600" />
-                    {language === 'fr' ? 'En-tête avec informations de rapport' : 'Header with report info'}
+                    {language === 'fr' ? 'Données en temps réel' : 'Real-time data'}
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     {language === 'fr' ? 'ID unique de rapport' : 'Unique report ID'}
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    {language === 'fr' ? 'Pied de page avec disclaimer' : 'Footer with disclaimer'}
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600" />
@@ -273,9 +494,13 @@ export default function ReportExport() {
                   className="w-full gap-2" 
                   variant="default"
                   onClick={handleCSVExport}
-                  disabled={isExporting}
+                  disabled={isExporting || isLoading}
                 >
-                  <Download className="h-4 w-4" />
+                  {isExporting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
                   {isExporting 
                     ? (language === 'fr' ? 'Génération...' : 'Generating...') 
                     : (language === 'fr' ? 'Télécharger CSV' : 'Download CSV')}
@@ -309,18 +534,18 @@ export default function ReportExport() {
                     <CheckCircle className="h-4 w-4 text-red-600" />
                     {language === 'fr' ? 'Section disclaimer légal' : 'Legal disclaimer section'}
                   </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-red-600" />
-                    {language === 'fr' ? 'Pied de page avec contacts' : 'Footer with contact info'}
-                  </li>
                 </ul>
                 <Button 
                   className="w-full gap-2" 
                   variant="default"
                   onClick={handlePDFExport}
-                  disabled={isExporting}
+                  disabled={isExporting || isLoading}
                 >
-                  <Download className="h-4 w-4" />
+                  {isExporting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
                   {isExporting 
                     ? (language === 'fr' ? 'Génération...' : 'Generating...') 
                     : (language === 'fr' ? 'Générer PDF' : 'Generate PDF')}
@@ -354,43 +579,67 @@ export default function ReportExport() {
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-primary" />
                 {language === 'fr' ? 'Aperçu des Données' : 'Data Preview'}
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
               </CardTitle>
               <CardDescription>
                 {reportTypes[selectedReport].description}
+                {!isLoading && (
+                  <span className="ml-2 text-primary font-medium">
+                    ({currentData.rows.length} {language === 'fr' ? 'enregistrements' : 'records'})
+                  </span>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border">
-                      {generateReportData(selectedReport).headers.map((header, i) => (
-                        <th key={i} className="text-left py-3 px-2 font-semibold text-muted-foreground">
-                          {header}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {generateReportData(selectedReport).rows.slice(0, 4).map((row, i) => (
-                      <tr key={i} className="border-b border-border/50">
-                        {row.map((cell, j) => (
-                          <td key={j} className="py-3 px-2">
-                            {cell}
-                          </td>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : currentData.rows.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Building className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                  <p className="font-medium">
+                    {language === 'fr' ? 'Aucune donnée disponible' : 'No data available'}
+                  </p>
+                  <p className="text-sm mt-1">
+                    {selectedReport === 'property' || selectedReport === 'recommendations' 
+                      ? (language === 'fr' ? 'Ajoutez des propriétés pour voir les données' : 'Add properties to see data')
+                      : (language === 'fr' ? 'Les données du marché seront bientôt disponibles' : 'Market data will be available soon')}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        {currentData.headers.map((header, i) => (
+                          <th key={i} className="text-left py-3 px-2 font-semibold text-muted-foreground">
+                            {header}
+                          </th>
                         ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {generateReportData(selectedReport).rows.length > 4 && (
-                  <p className="text-sm text-muted-foreground mt-4 text-center">
-                    {language === 'fr' 
-                      ? `+ ${generateReportData(selectedReport).rows.length - 4} lignes supplémentaires dans le rapport complet`
-                      : `+ ${generateReportData(selectedReport).rows.length - 4} more rows in full report`}
-                  </p>
-                )}
-              </div>
+                    </thead>
+                    <tbody>
+                      {currentData.rows.slice(0, 5).map((row, i) => (
+                        <tr key={i} className="border-b border-border/50">
+                          {row.map((cell, j) => (
+                            <td key={j} className="py-3 px-2">
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {currentData.rows.length > 5 && (
+                    <p className="text-sm text-muted-foreground mt-4 text-center">
+                      {language === 'fr' 
+                        ? `+ ${currentData.rows.length - 5} enregistrements supplémentaires...`
+                        : `+ ${currentData.rows.length - 5} more records...`}
+                    </p>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </main>
