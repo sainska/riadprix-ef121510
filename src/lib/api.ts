@@ -6,36 +6,30 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
-type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
 type PropertyType = Database['public']['Enums']['property_type'];
-type MarketRow = Tables<'markets'>;
-type BenchmarkRow = Tables<'benchmarks'>;
-type PropertyRow = Tables<'properties'>;
-type PricingDataRow = Tables<'pricing_data'>;
 
 // Market & Benchmark APIs
 export const marketsApi = {
-  async getMarkets(city?: string) {
+  async getMarkets(name?: string) {
     let query = supabase.from('markets').select('*');
-    if (city) {
-      query = query.eq('city', city);
+    if (name) {
+      query = query.ilike('name', `%${name}%`);
     }
-    const { data, error } = await query.order('city');
+    const { data, error } = await query.order('name');
     if (error) throw error;
-    return data as MarketRow[];
+    return data;
   },
 
   async getMarketById(id: string) {
     const { data, error } = await supabase.from('markets').select('*').eq('id', id).single();
     if (error) throw error;
-    return data as MarketRow;
+    return data;
   },
 };
 
 export const benchmarksApi = {
   async getBenchmarks(filters: {
     marketId?: string;
-    city?: string;
     propertyType?: PropertyType;
     startDate?: string;
     endDate?: string;
@@ -48,13 +42,13 @@ export const benchmarksApi = {
     
     const { data, error } = await query.order('period_start', { ascending: false });
     if (error) throw error;
-    return data as BenchmarkRow[];
+    return data;
   },
 
   async getBenchmarkById(id: string) {
     const { data, error } = await supabase.from('benchmarks').select('*').eq('id', id).single();
     if (error) throw error;
-    return data as BenchmarkRow;
+    return data;
   },
 };
 
@@ -64,34 +58,47 @@ export const propertiesApi = {
     const { data, error } = await supabase
       .from('properties')
       .select('*')
-      .eq('owner_id', userId)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
     if (error) throw error;
-    return data as PropertyRow[];
+    return data;
   },
 
   async getPropertyById(id: string) {
     const { data, error } = await supabase.from('properties').select('*').eq('id', id).single();
     if (error) throw error;
-    return data as PropertyRow;
+    return data;
   },
 
   async createProperty(property: {
     name: string;
     property_type: PropertyType;
-    city: string;
-    neighborhood?: string;
+    market_id?: string;
+    neighborhood_id?: string;
     bedrooms?: number;
     bathrooms?: number;
     max_guests?: number;
-    owner_id: string;
+    current_price?: number;
+    user_id: string;
   }) {
     const { data, error } = await supabase.from('properties').insert(property).select().single();
     if (error) throw error;
-    return data as PropertyRow;
+    return data;
   },
 
-  async updateProperty(id: string, updates: Partial<PropertyRow>) {
+  async updateProperty(id: string, updates: Partial<{
+    name: string;
+    property_type: PropertyType;
+    market_id: string | null;
+    neighborhood_id: string | null;
+    bedrooms: number | null;
+    bathrooms: number | null;
+    max_guests: number | null;
+    current_price: number | null;
+    is_active: boolean | null;
+    airbnb_url: string | null;
+    booking_url: string | null;
+  }>) {
     const { data, error } = await supabase
       .from('properties')
       .update(updates)
@@ -99,7 +106,7 @@ export const propertiesApi = {
       .select()
       .single();
     if (error) throw error;
-    return data as PropertyRow;
+    return data;
   },
 
   async deleteProperty(id: string) {
@@ -111,20 +118,18 @@ export const propertiesApi = {
 // Pricing Data APIs
 export const pricingApi = {
   async getPricingData(filters: {
-    propertyId?: string;
     marketId?: string;
     startDate?: string;
     endDate?: string;
   }) {
     let query = supabase.from('pricing_data').select('*');
-    if (filters.propertyId) query = query.eq('property_id', filters.propertyId);
     if (filters.marketId) query = query.eq('market_id', filters.marketId);
     if (filters.startDate) query = query.gte('date', filters.startDate);
     if (filters.endDate) query = query.lte('date', filters.endDate);
     
     const { data, error } = await query.order('date', { ascending: true });
     if (error) throw error;
-    return data as PricingDataRow[];
+    return data;
   },
 };
 
@@ -137,12 +142,9 @@ export const reportsApi = {
     startDate?: string;
     endDate?: string;
   }) {
-    // This would typically call a backend function or generate client-side
-    // For now, return a placeholder
     return { url: '#', message: 'Report generation in progress' };
   },
 };
 
-// Recommendations API - Now using full module
+// Recommendations API
 export { recommendationsApi } from '@/modules/recommendations/api';
-

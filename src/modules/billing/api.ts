@@ -6,12 +6,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
-type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
 type SubscriptionTier = Database['public']['Enums']['subscription_tier'];
-
-export type SubscriptionRow = Tables<'subscriptions'>;
-export type InvoiceRow = Tables<'invoices'>;
-export type UsageTrackingRow = Tables<'usage_tracking'>;
 
 export interface SubscriptionStatus {
   tier: SubscriptionTier;
@@ -36,11 +31,21 @@ export interface CurrentUsage {
   apiCallsThisMonth: number;
 }
 
+export interface Invoice {
+  id: string;
+  userId: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'paid' | 'failed';
+  createdAt: string;
+  paidAt?: string;
+}
+
 export const billingApi = {
   /**
    * Get user's current subscription
    */
-  async getSubscription(userId: string): Promise<SubscriptionRow | null> {
+  async getSubscription(userId: string) {
     const { data, error } = await supabase
       .from('subscriptions')
       .select('*')
@@ -48,10 +53,10 @@ export const billingApi = {
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows
-    return data as SubscriptionRow | null;
+    if (error) throw error;
+    return data;
   },
 
   /**
@@ -80,9 +85,9 @@ export const billingApi = {
 
     return {
       tier: subscription.tier,
-      isActive: subscription.is_active,
+      isActive: subscription.is_active ?? false,
       startsAt: subscription.starts_at,
-      endsAt: subscription.ends_at || undefined,
+      endsAt: subscription.ends_at ?? undefined,
       status,
     };
   },
@@ -105,10 +110,10 @@ export const billingApi = {
         apiCallsPerMonth: 10000,
       },
       enterprise: {
-        properties: -1, // unlimited
-        markets: -1, // unlimited
-        exportsPerMonth: -1, // unlimited
-        apiCallsPerMonth: -1, // unlimited
+        properties: -1,
+        markets: -1,
+        exportsPerMonth: -1,
+        apiCallsPerMonth: -1,
       },
     };
 
@@ -119,13 +124,11 @@ export const billingApi = {
    * Get current usage for user
    */
   async getCurrentUsage(userId: string): Promise<CurrentUsage> {
-    // Get property count
     const { count: propertiesCount } = await supabase
       .from('properties')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId);
 
-    // Get markets count (distinct markets from properties)
     const { data: properties } = await supabase
       .from('properties')
       .select('market_id')
@@ -133,20 +136,11 @@ export const billingApi = {
 
     const marketsCount = new Set(properties?.map(p => p.market_id)).size;
 
-    // Get exports this month (would need reports table)
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    // Placeholder - would query reports table when implemented
-    const exportsThisMonth = 0;
-
-    // Get API calls this month (would need usage_tracking table)
-    const apiCallsThisMonth = 0;
-
     return {
       properties: propertiesCount || 0,
       markets: marketsCount,
-      exportsThisMonth,
-      apiCallsThisMonth,
+      exportsThisMonth: 0,
+      apiCallsThisMonth: 0,
     };
   },
 
@@ -188,7 +182,7 @@ export const billingApi = {
         if (usage.exportsThisMonth >= limits.exportsPerMonth) {
           return {
             allowed: false,
-            reason: `Your ${tier} plan allows ${limits.exportsPerMonth} exports per month. Please upgrade for more.`,
+            reason: `Your ${tier} plan allows ${limits.exportsPerMonth} exports per month.`,
           };
         }
         return { allowed: true };
@@ -198,7 +192,7 @@ export const billingApi = {
         if (usage.apiCallsThisMonth >= limits.apiCallsPerMonth) {
           return {
             allowed: false,
-            reason: `Your ${tier} plan allows ${limits.apiCallsPerMonth} API calls per month. Please upgrade for more.`,
+            reason: `Your ${tier} plan allows ${limits.apiCallsPerMonth} API calls per month.`,
           };
         }
         return { allowed: true };
@@ -209,30 +203,19 @@ export const billingApi = {
   },
 
   /**
-   * Upgrade subscription (would integrate with Stripe)
+   * Upgrade subscription
    */
-  async upgradeSubscription(
-    userId: string,
-    newTier: SubscriptionTier
-  ): Promise<SubscriptionRow> {
-    // This would typically:
-    // 1. Create Stripe checkout session
-    // 2. Update subscription in database after payment confirmation
-    // For now, placeholder implementation
-
+  async upgradeSubscription(userId: string, newTier: SubscriptionTier) {
     const { data, error } = await supabase
       .from('subscriptions')
-      .update({
-        tier: newTier,
-        updated_at: new Date().toISOString(),
-      })
+      .update({ tier: newTier })
       .eq('user_id', userId)
       .eq('is_active', true)
       .select()
       .single();
 
     if (error) throw error;
-    return data as SubscriptionRow;
+    return data;
   },
 
   /**
@@ -252,12 +235,9 @@ export const billingApi = {
   },
 
   /**
-   * Get invoices for user
+   * Get invoices for user (mock implementation)
    */
-  async getInvoices(userId: string): Promise<InvoiceRow[]> {
-    // Would query invoices table when implemented
-    // For now, return empty array
+  async getInvoices(userId: string): Promise<Invoice[]> {
     return [];
   },
 };
-
